@@ -1,0 +1,73 @@
+// This code is for receiving Lora_Blynk data   
+#include <SPI.h>
+#include <LoRa.h>
+
+//define the pins used by the transceiver module
+#define ss 5
+#define rst 14
+#define dio0 2
+ String LoRaData;
+
+#include <Servo.h>
+
+Servo myservo;  // create servo object to control a servo
+// twelve servo objects can be created on most boards
+
+int pos = 0;    // variable to store the servo position
+
+void setup() {
+  //initialize Serial Monitor
+  Serial.begin(115200);
+   myservo.attach(13);  
+  while (!Serial);
+  Serial.println("LoRa Receiver");
+
+  //setup LoRa transceiver module
+  LoRa.setPins(ss, rst, dio0);
+  
+  //replace the LoRa.begin(---E-) argument with your location's frequency 
+  //433E6 for Asia
+  //866E6 for Europe
+  //915E6 for North America
+  while (!LoRa.begin(868E6)) {
+    Serial.println(".");
+    delay(500);
+  }
+   // Change sync word (0xF3) to match the receiver
+  // The sync word assures you don't get LoRa messages from other LoRa transceivers
+  // ranges from 0-0xFF
+  LoRa.setSyncWord(0xF3);
+  Serial.println("LoRa Initializing OK!");
+    myservo.write(0);  
+}
+
+void loop() {
+  // try to parse packet
+  int packetSize = LoRa.parsePacket();
+  if (packetSize) {
+    // received a packet
+    Serial.print("Received packet '");
+
+    // read packet
+    while (LoRa.available()) {
+      LoRaData = LoRa.readString();
+      Serial.print(LoRaData); 
+    }
+int val = LoRaData.substring(1, 3).toInt();
+// connect only s ok
+if(val==0)
+{
+  myservo.write(0);
+  } 
+  else{
+    myservo.write(val); 
+//break:
+  }
+      
+    // print RSSI of packet
+    Serial.print("' with RSSI ");
+    Serial.println(LoRa.packetRssi());
+  }
+}
+
+
